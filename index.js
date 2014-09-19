@@ -9,9 +9,9 @@
 
         var options = _.defaults({}, options, {
             model: {},
-            synchronizer: synchronizer(),
-            marshaller: marshaller(),
-            journal: journal()
+            synchronizer: synchronizer(options),
+            marshaller: marshaller(options),
+            journal: journal(options)
         });
 
         this.commands = {};
@@ -135,14 +135,14 @@
     };
 
     // some factories
-    module.exports.marshaller = function () {
-        return marshaller();
+    module.exports.marshaller = function (options) {
+        return marshaller(options);
     };
-    module.exports.synchronizer = function () {
-        return synchronizer();
+    module.exports.synchronizer = function (options) {
+        return synchronizer(options);
     };
-    module.exports.journal = function () {
-        return journal();
+    module.exports.journal = function (options) {
+        return journal(options);
     };
 
 })(module);
