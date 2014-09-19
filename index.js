@@ -45,7 +45,7 @@
                     handler.execute(self.model, command.args);
                 })
                 .on('done', function () {
-                    for (var i = 0; i < self.readyQ.length; ++i){
+                    for (var i = 0; i < self.readyQ.length; ++i) {
                         self.readyQ[i]();
                     }
                     self.readyQ = [];
@@ -97,22 +97,35 @@
 
         self.enqueueReady(function () {
             self.synchronizer.writeOperation(function (done) {
-                var err, result;
+                var finCalled = false;
+                var fin = function (err, result) {
+                    if (!finCalled) {
+                        finCalled = true;
+                        done();
+                        (cb || (function () {}))(err, result);
+                    }
+                };
+
                 try {
                     var handler = self.getCommandHandler(command);
                     handler.validate(self.model, args);
 
                     self.journal.append({
-                        command: command,
-                        args: args
-                    });
-                    var unsafeResult = handler.execute(self.model, args);
-                    result = self.marshaller.marshal(unsafeResult);
+                            command: command,
+                            args: args
+                        },
+                        function (err) {
+                            if (err) {
+                                return fin(err, null);
+                            }
+                            var unsafeResult = handler.execute(self.model, args);
+                            result = self.marshaller.marshal(unsafeResult);
+                            fin(null, result);
+                        }
+                    );
                 } catch (e) {
-                    err = e;
+                    fin(e, null);
                 }
-                done();
-                (cb || (function () {}))(err, result);
             });
         });
     };
