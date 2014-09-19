@@ -1,6 +1,7 @@
 # temp
 tmp
 temp
+*.tgz
 
 # Logs
 logs

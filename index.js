@@ -3,7 +3,8 @@
         _ = require('lodash'),
         synchronizer = require('./lib/synchronizer'),
         marshaller = require('./lib/marshaller'),
-        journal = require('./lib/journal');
+        fileJournal = require('./lib/filejournal'),
+        memoryJournal = require('./lib/memoryjournal');
 
     var Klass = function (options) {
 
@@ -11,8 +12,10 @@
             model: {},
             synchronizer: synchronizer(options),
             marshaller: marshaller(options),
-            journal: journal(options)
+            //journal: journal(options)
         });
+        
+        options.journal = options.journal || (options.fileJournal ? fileJournal(options.fileJournal) : memoryJournal());
 
         this.commands = {};
         this.model = options.model;
@@ -40,9 +43,9 @@
             this.restoring = true;
             var self = this;
             this.journal.replay(new EventEmitter()
-                .on('command', function (command) {
-                    var handler = self.getCommandHandler(command.command);
-                    handler.execute(self.model, command.args);
+                .on('command', function (entry) {
+                    var handler = self.getCommandHandler(entry.c);
+                    handler.execute(self.model, entry.a);
                 })
                 .on('done', function () {
                     for (var i = 0; i < self.readyQ.length; ++i) {
@@ -56,21 +59,28 @@
     }
 
     proto.registerCommand = function (name, handler) {
-        var h;
-        if (_.isFunction(handler)) {
-            h = {
-                validate: function () {},
-                execute: handler
-            }
-        } else if (_.isObject(handler)) {
-            h = _.defaults({}, handler, {
-                validate: function () {},
-                execute: function () {}
+        if (_.isFunction(handler)){
+            return this.registerCommand(name, {
+                execute: handler,
+                validate: function () {}
             });
         }
-        if (h) {
-            this.commands[name] = h;
+        if (!_.isObject(handler)){
+            throw new TypeError('Parameter handler in registerCommand(name,handler) should be an object or a function');
         }
+        if (('execute' in handler) && !_.isFunction(handler.execute)){
+            throw new TypeError('execute must be function member in a command handler');
+        }
+        if (('validate' in handler) && !_.isFunction(handler.validate)){
+            throw new TypeError('validate must be function member in a command handler');
+        }
+        if (!(('execute' in handler) && ('validate' in handler))){
+            handler = {
+                validate: handler.validate ? handler.validate.bind(handler) : _.noop,
+                execute: handler.execute ? handler.execute.bind(handler) : _.noop,
+            }
+        }
+        this.commands[name] = handler;
         return this;
     };
     proto.getCommandHandler = function (name) {
@@ -111,8 +121,8 @@
                     handler.validate(self.model, args);
 
                     self.journal.append({
-                            command: command,
-                            args: args
+                            c: command,
+                            a: args
                         },
                         function (err) {
                             if (err) {
@@ -135,14 +145,9 @@
     };
 
     // some factories
-    module.exports.marshaller = function (options) {
-        return marshaller(options);
-    };
-    module.exports.synchronizer = function (options) {
-        return synchronizer(options);
-    };
-    module.exports.journal = function (options) {
-        return journal(options);
-    };
+    module.exports.marshaller = marshaller;
+    module.exports.synchronizer = synchronizer;
+    module.exports.fileJournal = fileJournal;
+    module.exports.memoryJournal = memoryJournal;
 
 })(module);

@@ -2,8 +2,9 @@ var repo = require('./index');
 
 
 var repo = require('./index')({
-    journalPath: './tmp/journal/log.txt',
-    model: {count: 0}
+    fileJournal: {
+        path: './tmp/journal/log.txt'
+    },    model: {count: 0}
 });
 
 repo.registerCommand('inc',function (model) {

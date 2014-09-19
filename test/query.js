@@ -2,8 +2,8 @@ var assert = require('assert'),
     repo = require('./../index'),
     should = require('should');
 
-describe('query()', function () {
-    it('should pass results to callback', function (done) {
+describe('repo.query()', function () {
+    it('pass results to callback', function (done) {
         repo().query(
             function () {
                 return 'query result';
@@ -14,7 +14,7 @@ describe('query()', function () {
                 done();
             });
     });
-    it('should pass exceptions to callback', function (done) {
+    it('pass exceptions to callback', function (done) {
         repo().query(
             function () {
                 throw 'query error';

@@ -5,15 +5,13 @@ var assert = require('assert'),
 describe('restore', function () {
 
     // setup a shared in-memory journal
-    var journal = repo.journal();
+    var journal = repo.memoryJournal();
 
     function registerCommands(repo) {
         repo.registerCommand('set data prop', function (model, data) {
             (model.props || (model.props = {}))[data.name] = data.value;
         });
     }
-
-
 
     it('first run - just update model', function (done) {
         var r = repo({
