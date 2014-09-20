@@ -1,7 +1,4 @@
-var repo = require('./index');
-
-
-var repo = require('./index')({
+var repo = require('./../index')({
     fileJournal: {
         path: './tmp/journal/log.txt'
     },    model: {count: 0}
