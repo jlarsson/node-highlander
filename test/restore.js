@@ -8,7 +8,9 @@ describe('restore', function () {
     var journal = repo.memoryJournal();
 
     function registerCommands(repo) {
-        repo.registerCommand('set data prop', function (model, data) {
+        repo.registerCommand('set data prop', function (ctx) {
+            var model = ctx.model;
+            var data = ctx.args;
             (model.props || (model.props = {}))[data.name] = data.value;
         });
     }

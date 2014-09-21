@@ -12,8 +12,8 @@ describe('repo.execute()', function () {
         });
 
         r.execute('cmd', null, function (err, data) {
-            assert(!err);
-            validateCalled.should.equal(true);
+            assert(!err, 'Unexpected error');
+            validateCalled.should.equal(true,'validation method should be called');
             data.should.equal('command result');
             done();
         });
@@ -27,7 +27,7 @@ describe('repo.execute()', function () {
         });
 
         r.execute('cmd', null, function (err, data) {
-            assert(!data);
+            assert(!data, 'Unexpected data');
             err.should.equal('validation failed');
             done();
         });
