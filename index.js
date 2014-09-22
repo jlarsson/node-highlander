@@ -6,7 +6,7 @@
     memoryJournal = require('./lib/memoryjournal'),
     commandRegistry = require('./lib/commandRegistry');
 
-    module.exports = repository;
+    module.exports = function (options) { return repository(options); };
     module.exports.repository = repository;
     module.exports.marshaller = marshaller;
     module.exports.synchronizer = synchronizer;
