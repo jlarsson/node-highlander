@@ -82,17 +82,15 @@ Invoke a query asynchronously.
 The query predicate (`fn`) should have the form `function (model, cb) {...}`, and is assumed to have no side effects on the model. `fn` must report result with a call to `cb(<err>,<result>)`.
 The callback `callback` (optional) should be have the form `function (err, result) {...}`.
 
+    repository.query(
+        function (model, cb) {
+            var result = calculateResult(model);
+            cb(null, result);
+        },
+        function (err, result) {
+            console.log(result);
+        });
 
-`
-	repository.query(
-		function (model, cb) {
-			var result = calculateResult(model);
-			cb(null, result);
-		},
-		function (err, result) {
-			console.log(result);
-	});
-`
 
 ## repository.registerCommand(name, handler)
 Register a command. Handler must be on the form
@@ -130,7 +128,6 @@ Also, validators may `throw` in case of failed validation.
 
 ### executors - execute(ctx, cb)
 Executors may freely inspect the context parameter. In particular, they are assumed to modify `context.model` in a meaningful way. 
-
 
     function (ctx, cb) {
         ctx.model.gizmo = ctx.args.gizmo;
