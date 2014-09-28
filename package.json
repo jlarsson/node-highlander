@@ -1,7 +1,7 @@
 {
   "name": "highlander",
   "version": "0.0.1",
-  "description": "node-highlander\r ===============",
+  "description": "node-highlander",
   "main": "index.js",
   "scripts": {
     "test": "mocha --reporter spec"

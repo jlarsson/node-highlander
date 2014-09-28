@@ -9,8 +9,8 @@ describe('restore', function () {
 
     function createRepo(journal) {
         return highlander.repository({
-            journal: journal
-        })
+                journal: journal
+            })
             .registerCommand('set data prop', function (ctx, cb) {
                 var model = ctx.model;
                 var data = ctx.args;
@@ -58,8 +58,8 @@ describe('restore a big journal without getting stack overflow', function () {
 
     function createRepo(journal) {
         return highlander.repository({
-            journal: journal
-        })
+                journal: journal
+            })
             .registerCommand('set data prop', function (ctx, cb) {
                 var model = ctx.model;
                 var data = ctx.args;
@@ -72,7 +72,7 @@ describe('restore a big journal without getting stack overflow', function () {
         this.timeout(10000);
         var repo = createRepo(sharedJournal);
 
-        var N = 100;
+        var N = 10000;
         var actual = 0;
 
         for (var i = 0; i < N; ++i) {
@@ -91,16 +91,22 @@ describe('restore a big journal without getting stack overflow', function () {
 
     it('second run - verify restored model', function (done) {
         createRepo(sharedJournal)
-            .query(
-                function (model, cb) {
-                    cb(null, model.props);
-                },
-                function (err, props) {
-                    assert(!err);
-                    assert(props);
-                    assert.equal(props['a'], 1);
-                    done();
-                }
+            .execute('set data prop', {
+                name: 'b',
+                value: '2'
+            })
+
+        .query(
+            function (model, cb) {
+                cb(null, model.props);
+            },
+            function (err, props) {
+                assert(!err);
+                assert(props);
+                assert.equal(props['a'], 1);
+                assert.equal(props['b'], 2);
+                done();
+            }
         );
     });
 });
