@@ -5,45 +5,83 @@
 var assert = require('assert'),
     highlander = require('./../index'),
     should = require('should');
-/*
+
 
 describe('$prestore command is called before any ', function () {
     function createRepo(journal) {
         return highlander.repository({
-            journal: journal,
+            journal: journal || highlander.memoryJournal(),
             model: {
                 executedCommands: []
             }
         })
-            .registerCommand('$prerestore', function (ctx) {
-                console.log('$pre');
+            .registerCommand('$prerestore', function (ctx, cb) {
                 ctx.model.executedCommands.push('$prerestore');
+                cb();
             })
-            .registerCommand('$postrestore', function (ctx) {
-                console.log('$post');
+            .registerCommand('$postrestore', function (ctx, cb) {
                 ctx.model.executedCommands.push('$postrestore');
+                cb();
             })
-            .registerCommand('my command', function (ctx) {
-                console.log('$my command');
+            .registerCommand('my command', function (ctx, cb) {
                 ctx.model.executedCommands.push('my command');
+                cb();
+            })
+            .registerCommand('my other command', function (ctx, cb) {
+                ctx.model.executedCommands.push('my other command');
+                cb();
             });
     }
 
     // setup a shared in-memory journal
     var journal = highlander.memoryJournal();
 
-    it('doh!', function (done) {
-        createRepo(journal)
-            .query(function (model) {
-                    return model.executedCommands;
+    it('$prestore and $postrestore are executed on empty journal', function (done) {
+        createRepo()
+            .query(function (model, cb) {
+                    cb(null, model.executedCommands);
                 },
                 function (err, executedCommands) {
-                    console.log('err:', err);
-                    console.log('executedCommands:', executedCommands);
                     assert(!err);
                     executedCommands.should.eql(['$prerestore', '$postrestore'])
                     done();
                 });
 
     });
-});*/
+
+    it('$postrestore is executed before queued commands', function (done) {
+        createRepo()
+            .execute('my command')
+            .query(function (model, cb) {
+                    cb(null, model.executedCommands);
+                },
+                function (err, executedCommands) {
+                    assert(!err);
+                    executedCommands.should.eql(['$prerestore', '$postrestore', 'my command'])
+                    done();
+                });
+
+    });
+
+    it('$postrestore is executed after journaled commands and before queued commands ', function (done) {
+        var journal = highlander.memoryJournal();
+
+        // warm up repo with a command in the journal
+        createRepo(journal)
+            .execute('my command', null, function () {
+                createRepo(journal)
+                    .execute('my other command')
+                    .query(function (model, cb) {
+                            cb(null, model.executedCommands);
+                        },
+                        function (err, executedCommands) {
+                            assert(!err);
+                            executedCommands.should.eql(['$prerestore', 'my command', '$postrestore', 'my other command'])
+                            done();
+                        });
+
+            });
+
+    });
+
+});

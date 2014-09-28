@@ -15,15 +15,16 @@ highLander
             }
         })
     })
-    .registerCommand('started', function (ctx) {
+    .registerCommand('started', function (ctx, cb) {
         ++ctx.model.count;
+        cb();
     })
     .execute('started', {
         when: new Date().getTime()
     })
     .query(
-        function (model) {
-            return model.count;
+        function (model, cb) {
+            cb(null,model.count);
         },
         function (err, count) {
             console.log('count=' + count);

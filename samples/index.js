@@ -23,8 +23,9 @@ var repo = highlander.repository({
             path: 'samples.log'
         })
     })
-    .registerCommand('start', function (ctx) {
+    .registerCommand('start', function (ctx, cb) {
         ++ctx.model.startCount;
+        cb();
     });
 
 function reset(next) {
@@ -53,8 +54,8 @@ function registerStarted(next) {
 
 function showStartCount(next) {
     repo.query(
-        function (model) {
-            return model.startCount;
+        function (model, cb) {
+            cb(null, model.startCount);
         },
         function (err, startCount) {
             console.log('== Info');
