@@ -52,7 +52,7 @@ Add a todo by executing a command:
 List all todos:
 
     repo.query(
-		function (model, cb) { cb(model.todos); },
+		function (model, cb) { cb(null, model.todos); },
 		function (err, todos) {
 			if (err){
 				return console.error(err);
