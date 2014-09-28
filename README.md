@@ -3,7 +3,7 @@ Prevalence layer for node.
 
 # Installation
 
-`npm i node-highlander`
+`npm i highlander`
 
 ## Designed for simplicity
 node-highlander is a simple implementation of [System Prevalence](http://en.wikipedia.org/wiki/System_Prevalence). As such it can be used as
