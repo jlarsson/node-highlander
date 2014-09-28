@@ -39,7 +39,7 @@ Setup a repository that is backed to disk with
 
 Define a command (add todo):
 
-`repo.registerCommand('add todo',function (ctx, todo){ ctx.model.todos.push(todo); });` 
+`repo.registerCommand('add todo',function (ctx, cb){ ctx.model.todos.push(ctx.args); cb(); });` 
 
 Add a todo by executing a command:
 
@@ -52,7 +52,7 @@ Add a todo by executing a command:
 List all todos:
 
     repo.query(
-		function (model) { return model.todos; },
+		function (model, cb) { cb(model.todos); },
 		function (err, todos) {
 			if (err){
 				return console.error(err);
@@ -79,15 +79,27 @@ The callback (optional) should be have the form `function (err, result) {...}`.
 ## repository.query(fn, callback)
 Invoke a query asynchronously.
 
-The query predicate (`fn`) should have the form `function (model) {...}`, and is assumed to have no side effects on the model. 
-The callback (optional) should be have the form `function (err, result) {...}`.
+The query predicate (`fn`) should have the form `function (model, cb) {...}`, and is assumed to have no side effects on the model. `fn` must report result with a call to `cb(<err>,<result>)`.
+The callback `callback` (optional) should be have the form `function (err, result) {...}`.
+
+
+`
+	repository.query(
+		function (model, cb) {
+			var result = calculateResult(model);
+			cb(null, result);
+		},
+		function (err, result) {
+			console.log(result);
+	});
+`
 
 ## repository.registerCommand(name, handler)
 Register a command. Handler must be on the form
 
-- `function (context) {...}`
-- `{execute: function (context) {...}}`
-- `{execute: function (context) {...}, validate: function (context) {...}}`     
+- `function (context, cb) {...}`
+- `{execute: function (context, cb) {...}}`
+- `{execute: function (context, cb) {...}, validate: function (context, cb) {...}}`     
 
 Context is setup to
  
@@ -95,13 +107,36 @@ Context is setup to
     	model: <the model>,
     	command: <name of invoked command>,
     	args: <supplied command arguments>
-    	replay: <true iff command is executed a part of restore from journal> 
     }  
     
-
+### validators - validate(ctx,cb)
 Validators are called before executors. 
-Also, validators are assumed to `throw` in case of failed validation.
+
+    function (ctx, cb){
+        if (argumentsAreInconsistentWithModel(ctx.args, ctx.model){
+            return cb('Validation error');
+        }
+        cb();
+    }
+
+
+Also, validators may `throw` in case of failed validation.
+
+    function (ctx, cb){
+        if (argumentsAreInconsistentWithModel(ctx.args, ctx.model){
+            throw 'Validation error';
+        }
+    }
+
+### executors - execute(ctx, cb)
 Executors may freely inspect the context parameter. In particular, they are assumed to modify `context.model` in a meaningful way. 
+
+
+    function (ctx, cb) {
+        ctx.model.gizmo = ctx.args.gizmo;
+        cb(null,ctx.model.gizmo);
+    }
+
 
 ## Why asynchronous when all state is in main memory anyways?
 
