@@ -1,16 +1,18 @@
+/*jslint node: true */
+/*global describe,it*/
+'use strict';
+
 var assert = require('assert'),
     commandRegistry = require('./../index').commandRegistry,
     should = require('should');
 
 describe('commandRegistry.getCommandHandler()', function () {
-    it('throws exception by default for unregistered commands', function () {
+    it('returns null for unregistered commands', function () {
         var registry = commandRegistry();
-        assert.throws(function () {
-            registry.getCommandHandler('some missing command');
-        });
+        assert(registry.getCommandHandler('some missing command') === null);
     });
     it('allows fallback for unregistered commands', function () {
-        var testHandler = function (){};
+        function testHandler() {}
         var registry = commandRegistry({
             resolveMissingCommandHandler: function () { return testHandler; } 
         });
@@ -20,12 +22,21 @@ describe('commandRegistry.getCommandHandler()', function () {
     });
 });
 
+describe('commandRegistry.registerCommand(<name>,<falsy>', function () {
+    it('does nothing', function (){
+        var registry = commandRegistry();
+        
+        registry.registerCommand('c');
+        assert(registry.getCommandHandler('c') === null);
+    });
+});
+    
 describe('commandRegistry.registerCommand() throws exceptions when', function () {
-    describe('registerCommand(<not an object or function>)', function () {
+    describe('registerCommand(<name>, <not an object or function>)', function () {
         it('throws an exception', function () {
             var registry = commandRegistry();
             assert.throws(function () {
-                    registry.registerCommand('c');
+                    registry.registerCommand('c','bad value');
                 },
                 TypeError);
             assert.throws(function () {
@@ -38,7 +49,7 @@ describe('commandRegistry.registerCommand() throws exceptions when', function ()
                 TypeError);
         });
     });
-    describe('registerCommand({validate: <not a function>})', function () {
+    describe('registerCommand(<name>,{validate: <not a function>})', function () {
         it('throws an exception', function () {
             var registry = commandRegistry();
             assert.throws(function () {
@@ -49,7 +60,7 @@ describe('commandRegistry.registerCommand() throws exceptions when', function ()
                 TypeError);
         });
     });
-    describe('registerCommand({execute: <not a function>})', function () {
+    describe('registerCommand(<name>,{execute: <not a function>})', function () {
         it('throws an exception', function () {
             var registry = commandRegistry();
             assert.throws(function () {
@@ -63,27 +74,29 @@ describe('commandRegistry.registerCommand() throws exceptions when', function ()
 });
 
 describe('commandRegistry.registerCommand() accepts a (execute) function', function () {
-    describe('registerCommand(function)', function () {
+    describe('registerCommand(<name>,function)', function () {
         var registry = commandRegistry();
         var testHandler = function () {};
         registry.registerCommand('c', testHandler);
         var handler = registry.getCommandHandler('c');
+        
+        console.log('handler: ', handler);
         it('wraps function in a command handler object', function () {
-            handler.should.be.instanceof(Object);
+            handler.should.be.an.Object;
         });
-        it('which has the specified function as the execute method ', function () {
-            handler.execute.should.be.instanceof(Function);
-            handler.execute.should.be.exactly(testHandler);
+        it('which has an execute method ', function () {
+            console.log('handler.execute: ', handler.execute);
+            handler.execute.should.be.a.Function;
         });
         it('and a validate method', function () {
-            handler.validate.should.be.instanceof(Function);
+            handler.validate.should.be.a.Function;
         });
     });
 });
 
 
 describe('repo.registerCommand() accepts handler objects', function () {
-    describe('registerCommand({})', function () {
+    describe('registerCommand(<name>,{})', function () {
         var registry = commandRegistry();
         registry.registerCommand('c', {});
         var handler = registry.getCommandHandler('c');
@@ -94,7 +107,7 @@ describe('repo.registerCommand() accepts handler objects', function () {
             handler.validate.should.be.instanceof(Function);
         });
     });
-    describe('registerCommand({handler: function () ...})', function () {
+    describe('registerCommand(<name>,{handler: function () ...})', function () {
         var registry = commandRegistry();
         registry.registerCommand('c', {
             x: 1,

@@ -5,8 +5,8 @@ var assert = require('assert'),
 describe('repo.query()', function () {
     it('pass results to callback', function (done) {
         repo().query(
-            function () {
-                return 'query result';
+            function (model, cb) {
+                cb(null,'query result');
             },
             function (err, data) {
                 assert(!err,'error should not be set');
@@ -14,10 +14,10 @@ describe('repo.query()', function () {
                 done();
             });
     });
-    it('pass exceptions to callback', function (done) {
+    it('pass errors to callback', function (done) {
         repo().query(
-            function () {
-                throw 'query error';
+            function (model, cb) {
+                cb('query error',null);
             },
             function (err, data) {
                 assert(!data,'result should not be set');
