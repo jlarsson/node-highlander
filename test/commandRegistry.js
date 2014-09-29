@@ -80,12 +80,10 @@ describe('commandRegistry.registerCommand() accepts a (execute) function', funct
         registry.registerCommand('c', testHandler);
         var handler = registry.getCommandHandler('c');
         
-        console.log('handler: ', handler);
         it('wraps function in a command handler object', function () {
             handler.should.be.an.Object;
         });
         it('which has an execute method ', function () {
-            console.log('handler.execute: ', handler.execute);
             handler.execute.should.be.a.Function;
         });
         it('and a validate method', function () {

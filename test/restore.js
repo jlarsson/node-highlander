@@ -72,7 +72,7 @@ describe('restore a big journal without getting stack overflow', function () {
         this.timeout(10000);
         var repo = createRepo(sharedJournal);
 
-        var N = 10000;
+        var N = 1000;
         var actual = 0;
 
         for (var i = 0; i < N; ++i) {
