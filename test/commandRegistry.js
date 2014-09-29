@@ -109,8 +109,8 @@ describe('repo.registerCommand() accepts handler objects', function () {
         var registry = commandRegistry();
         registry.registerCommand('c', {
             x: 1,
-            execute: function () {
-                return this.x;
+            execute: function (ctx, cb) {
+                cb(null, this.x);
             }
         });
         var handler = registry.getCommandHandler('c');
@@ -121,7 +121,9 @@ describe('repo.registerCommand() accepts handler objects', function () {
             handler.validate.should.be.instanceof(Function);
         });
         it('and preserves this bindings', function () {
-            handler.execute().should.be.equal(1);
+            handler.execute(null, function (err, result){
+                result.should.be.equal(1);
+            });
         });
     });
 });
