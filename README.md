@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/jlarsson/node-highlander.svg?branch=master)](https://travis-ci.org/jlarsson/node-highlander)
 # node-highlander
 Prevalence layer for node.
 
