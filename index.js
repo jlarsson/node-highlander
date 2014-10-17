@@ -4,7 +4,8 @@
     marshaller = require('./lib/marshaller'),
     fileJournal = require('./lib/filejournal'),
     memoryJournal = require('./lib/memoryjournal'),
-    commandRegistry = require('./lib/commandRegistry');
+    commandRegistry = require('./lib/commandRegistry'),
+    nomarshal = require('./lib/nomarshal');
 
     module.exports = function (options) { return repository(options); };
     module.exports.repository = repository;
@@ -13,5 +14,6 @@
     module.exports.fileJournal = fileJournal;
     module.exports.memoryJournal = memoryJournal;
     module.exports.commandRegistry = commandRegistry;
+    module.exports.nomarshal = nomarshal;
 
 })(module);
