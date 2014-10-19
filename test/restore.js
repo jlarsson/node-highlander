@@ -52,7 +52,6 @@ describe('restore', function () {
 });
 
 describe('restore a big journal without getting stack overflow', function () {
-
     // setup a shared in-memory journal
     var sharedJournal = highlander.memoryJournal();
 
