@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/jlarsson/node-highlander.svg?branch=master)](https://travis-ci.org/jlarsson/node-highlander)
+[![NPM version](https://badge.fury.io/js/highlander.svg)](http://badge.fury.io/js/highlander)
+
 # node-highlander
 Prevalence layer for node.
 
