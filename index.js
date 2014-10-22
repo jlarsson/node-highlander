@@ -1,19 +1,17 @@
 (function (module) {
-    repository = require('./lib/repository')
-    synchronizer = require('./lib/synchronizer'),
-    marshaller = require('./lib/marshaller'),
-    fileJournal = require('./lib/filejournal'),
-    memoryJournal = require('./lib/memoryjournal'),
-    commandRegistry = require('./lib/commandRegistry'),
-    nomarshal = require('./lib/nomarshal');
+    "use strict";
 
-    module.exports = function (options) { return repository(options); };
+    var repository = require('./lib/repository');
+
+    module.exports = function (options) {
+        return repository(options);
+    };
     module.exports.repository = repository;
-    module.exports.marshaller = marshaller;
-    module.exports.synchronizer = synchronizer;
-    module.exports.fileJournal = fileJournal;
-    module.exports.memoryJournal = memoryJournal;
-    module.exports.commandRegistry = commandRegistry;
-    module.exports.nomarshal = nomarshal;
+    module.exports.marshaller = require('./lib/marshaller');
+    module.exports.synchronizer = require('./lib/synchronizer');
+    module.exports.fileJournal = require('./lib/filejournal');
+    module.exports.memoryJournal = require('./lib/memoryjournal');
+    module.exports.commandRegistry = require('./lib/commandRegistry');
+    module.exports.nomarshal = require('./lib/nomarshal');
 
 })(module);
