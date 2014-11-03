@@ -15,6 +15,8 @@ describe('$prestore command is called before any ', function () {
                 executedCommands: []
             }
         })
+            //.on('executed', function (data){ console.log('executed: %j', data); })
+            //.on('restored', function (data){ console.log('restored: %j', data); })
             .registerCommand('$prerestore', function (ctx, cb) {
                 ctx.model.executedCommands.push('$prerestore');
                 cb();
