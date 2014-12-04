@@ -1,6 +1,8 @@
 var Promise = require('bluebird');
 var _ = require('lodash');
 var assert = require('assert');
+var async = require('async');
+var fs = require('fs');
 var mkdirp = Promise.promisify(require('mkdirp'));
 var rmrf = Promise.promisify(require('rimraf'));
 var highlander = require('../')
@@ -12,8 +14,9 @@ describe('highlander', function() {
   var testJournal = './tmp/test.journal';
   var repo;
 
-  function createRepo() {
+  function createRepo(model) {
     return highlander({
+      model: model || {},
       path: testJournal
     });
   }
@@ -26,7 +29,6 @@ describe('highlander', function() {
       .then(done);
   })
   afterEach(function(done) {
-    return done();
     rmrf(testFolder)
       .then(done);
   });
@@ -93,11 +95,11 @@ describe('highlander', function() {
             name: 'set-x'
           });
         })
-        .then(function (){
+        .then(function() {
           return assert.fail('Validation should have failed');
         })
         .catch(function(e) {
-          assert(e.isValidationError,'Expected validation error');
+          assert(e.isValidationError, 'Expected validation error');
         })
         .then(done)
         .catch(done);
@@ -135,6 +137,56 @@ describe('highlander', function() {
         .then(done)
         .catch(done);
 
+    })
+  })
+
+  describe('journal', function() {
+
+    var createBigJournal = Promise.promisify(function(count, callback) {
+      var stream = fs.createWriteStream(testJournal);
+      async.eachSeries(_.range(0, count), function(i, cb) {
+        var entry = { // yes, we happen to know the internal format...
+          n: 'check-and-inc',
+          a: i
+        };
+        stream.write(
+          JSON.stringify(entry) + '\n',
+          'utf8',
+          cb)
+
+      }, function(err) {
+        stream.end();
+        callback(err);
+      })
+    });
+    it('is restored in order', function(done) {
+      this.timeout(10000);
+      // create journal manually
+      var N = 10000;
+      createBigJournal(N)
+        .then(function() {
+          // define repo
+          repo = createRepo({x:0})
+          repo.register({
+            name: 'check-and-inc',
+            execute: function(ctx) {
+              // increment counter only if sequence is correct
+              if (ctx.model.x === ctx.argument){
+                ++ctx.model.x;
+              }
+            }
+          })
+        })
+        .then(function (){
+          return repo.query(function (ctx){
+            return ctx.model.x;
+          })
+        })
+        .then(function (value){
+          assert.equal(value,N);
+        })
+        .then(done)
+        .catch(done);
     })
   })
 
