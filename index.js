@@ -28,8 +28,14 @@
       The in memory data
     .commands
       Mapping from commandname to handler
-      Handlers have the form function (model)
-    .execute(name, arg)
+      Handlers have the form function (ctx)
+    .register({name: string, execute: fn, validate: fn})
+      register named command
+      execute assumed to be function (context [,callback])
+      validate assumed to be function (context [,callback])
+      context is an object {model: <the model>, name: string, argument: any, replay: bool}
+
+    .execute({name: string, argument: any})
       carries out action of named command
       write synhcronized (1 writer, 0 readers)
     .query(fn)
@@ -46,17 +52,18 @@
         })
         .then(function exec_command(handler) {
           if (!handler) {
-            throw new CommandError('No handler found for %j. Please use Repository.register({name:...,execute:...,validate:...}) before.', command);
+            throw CommandError('No handler found for %j. Please use Repository.register({name:...,execute:...,validate:...}) before.', command);
           }
           this.handler = handler;
           this.handlerContext = {
             model: this.repo.model,
             name: this.command.name,
             argument: this.command.argument,
-            replay: this.command.replay
+            replay: this.command.replay,
+            Promise: Promise
           };
         })
-        .then(function exec_validate(){
+        .then(function exec_validate() {
           return this.handler.validate(this.handlerContext);
         })
         .then(function exec_log() {
@@ -64,12 +71,7 @@
         })
         .then(function exec_execute() {
           debug('executing %j', this.command)
-          return this.handler.execute({
-            model: this.repo.model,
-            name: this.command.name,
-            argument: this.command.argument,
-            replay: this.command.replay
-          });
+          return this.handler.execute(this.handlerContext);
         });
     }
     return classBuilder()
@@ -91,54 +93,58 @@
         return this.commands.register(command, callback);
       }))
       .method('initialize', Promise.method(function initialize(callback) {
-        var self = this;
-        return self.__initialized ? true : using(self.lock.getWriteLock('initialize'), function initialize_scope() {
-            return self.__initialized ? true : exec(self, {
-                name: '$preinit',
-                argument: null,
-                replay: true
-              })
-              .then(function() {
-                return self.journal
-                  .replay(function initialize_replay_command(entry) {
-                    return exec(self, {
-                      name: entry.name,
-                      argument: entry.argument,
-                      replay: true
-                    });
-                  })
-              })
-              .then(function() {
-                return exec(self, {
-                  name: '$postinit',
+        return this.__initialized ? true : this.lock.writeLock(function initialize_scope() {
+              return this.__initialized ? true : exec(this, {
+                  name: '$preinit',
                   argument: null,
                   replay: true
-                });
-              })
-              .then(function initialize_replay_done() {
-                debug('replay done')
-                self.__initialized = true;
-                return true;
-              })
-          })
+                })
+                .bind(this)
+                .then(function() {
+                  return this.journal
+                    .replay(function initialize_replay_command(entry) {
+                      return exec(this, {
+                        name: entry.name,
+                        argument: entry.argument,
+                        replay: true
+                      });
+                    }.bind(this));
+                })
+                .then(function() {
+                  return exec(this, {
+                    name: '$postinit',
+                    argument: null,
+                    replay: true
+                  });
+                })
+                .then(function initialize_replay_done() {
+                  debug('replay done')
+                  this.__initialized = true;
+                  return true;
+                })
+            }
+            .bind(this),
+            'initialize')
           .nodeify(callback);
       }))
       .method('query', function query(predicate, callback) {
-        var self = this;
         return this
           .initialize()
+          .bind(this)
           .then(function query_run() {
-            return using(self.lock.getReadLock(), function query_scope() {
-              var p = predicate;
-              if (p.length === 2) {
-                // Node style: Function (ctx, callback)
-                p = Promise.promisify(p);
+            return this.lock.readLock(function query_scope() {
+                var p = predicate;
+                if (p.length === 2) {
+                  // Node style: Function (ctx, callback)
+                  p = Promise.promisify(p);
+                }
+                return p({
+                  model: this.model,
+                  promise: Promise
+                });
               }
-              return p({
-                model: self.model,
-                promise: Promise
-              });
-            })
+              .bind(this)
+            )
           })
           .nodeify(callback);
       })
@@ -146,20 +152,23 @@
         verifyObject(command, 'Repository.execute(command) expects command like {name:[string],argument:...}');
         verifyString(command.name, 'Repository.execute(command) expects command like {name:[string],argument:...}');
 
-        var self = this;
         return this
           .initialize()
+          .bind(this)
           .then(function execute_run() {
-            return using(self.lock.getWriteLock(command.name), function execute_scope() {
-              return exec(self, command)
+            return this.lock.writeLock(function execute_scope() {
+              return exec(this, command)
+                .bind(this)
                 .then(function execute_marshal_result(result) {
-                  return self.marshaller.marshal(result)
+                  return this.marshaller.marshal(result)
                 })
                 .then(function execute_done(result) {
                   debug('result:%j', result);
                   return result;
                 });
-            })
+            }
+            .bind(this),
+            command.name);
           })
           .nodeify(callback);
       })
@@ -269,10 +278,10 @@
       .construct(function construct() {
         this.rwlock = new rwlock();
       })
-      .method('readLock', function (fn, debugHint){
+      .method('readLock', function(fn, debugHint) {
         return using(this.getReadLock(debugHint), Promise.method(fn));
       })
-      .method('writeLock', function (fn, debugHint){
+      .method('writeLock', function(fn, debugHint) {
         return using(this.getWriteLock(debugHint), Promise.method(fn));
       })
       .method('getReadLock', function getReadLock(debugHint) {
@@ -434,7 +443,7 @@
         // read next buffer, analyze line contents and emit found lines
         function readNext(callback) {
           var buflen = 1024 * 4;
-          var buf = new Buffer(buflen);
+          var buf = Buffer(buflen);
 
           fs.read(fd, buf, 0, buflen, fileOffset, function(err, bytesRead, data) {
             if (err) {
